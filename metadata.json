@@ -1,0 +1,8 @@
+{
+  "name": "Quiz Demo",
+  "description": "Full-stack Node.js Express quiz application with PostgreSQL database and role-based authentication.",
+  "permissions": [],
+  "capabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

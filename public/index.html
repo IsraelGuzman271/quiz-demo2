@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quiz Demo</title>
+  <meta name="description" content="Full-stack Node.js Express quiz application with PostgreSQL database and role-based authentication.">
+  <meta property="og:title" content="Quiz Demo">
+  <meta property="og:description" content="Full-stack Node.js Express quiz application with PostgreSQL database and role-based authentication.">
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <!-- Header & Navigation -->
+  <header class="app-header">
+    <div class="header-container">
+      <div class="brand">
+        <div class="brand-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+          </svg>
+        </div>
+        <div class="brand-text">
+          <h1>Quiz Demo</h1>
+          <span class="qa-badge">Branch: phase-1-foundation-auth</span>
+        </div>
+      </div>
+
+      <div class="header-right">
+        <div id="dbStatusBadge" class="status-pill status-loading">
+          <span class="status-dot"></span>
+          <span class="status-text">Checking DB...</span>
+        </div>
+        <div id="userHeaderWidget" class="user-header-widget">
+          <span class="guest-text">Not logged in</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Notification Banner -->
+  <div id="notificationArea" class="notification-area"></div>
+
+  <!-- Main Content Area -->
+  <main class="main-container">
+
+    <!-- Auth View (Shown when not logged in) -->
+    <section id="authSection" class="auth-section">
+      <div class="section-hero">
+        <h2>Phase 1: Foundation & Authentication</h2>
+        <p>Complete authentication system backed by PostgreSQL with role-based access control (Player vs Admin).</p>
+      </div>
+
+      <div class="auth-grid">
+        <!-- Login Card -->
+        <div class="auth-card">
+          <div class="card-header">
+            <h3>Login</h3>
+            <p>Access your player or administrator account</p>
+          </div>
+          <form id="loginForm" class="auth-form" autocomplete="off">
+            <div class="form-group">
+              <label for="loginIdentifier">Username or Email</label>
+              <input type="text" id="loginIdentifier" required placeholder="e.g. quizmaster or alex@example.com">
+            </div>
+            <div class="form-group">
+              <label for="loginPassword">Password</label>
+              <input type="password" id="loginPassword" required placeholder="••••••••">
+            </div>
+            <button type="submit" class="btn btn-primary btn-block" id="loginSubmitBtn">
+              Sign In
+            </button>
+          </form>
+
+          <div class="qa-quick-fill">
+            <span class="quick-fill-label">QA Quick Test Helper:</span>
+            <div class="quick-fill-buttons">
+              <button type="button" class="btn-sm btn-ghost" id="quickFillPlayerBtn">Fill Player Demo</button>
+              <button type="button" class="btn-sm btn-ghost" id="quickFillAdminBtn">Fill Admin Demo</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Register Card -->
+        <div class="auth-card">
+          <div class="card-header">
+            <h3>Register New User</h3>
+            <p>Create an account with role-based permissions</p>
+          </div>
+          <form id="registerForm" class="auth-form" autocomplete="off">
+            <div class="form-group">
+              <label for="regUsername">Username</label>
+              <input type="text" id="regUsername" required minlength="3" maxlength="30" placeholder="e.g. test_player">
+              <span class="form-hint">3-30 alphanumeric characters or underscores</span>
+            </div>
+            <div class="form-group">
+              <label for="regEmail">Email Address</label>
+              <input type="email" id="regEmail" required placeholder="player@example.com">
+            </div>
+            <div class="form-group">
+              <label for="regPassword">Password</label>
+              <input type="password" id="regPassword" required minlength="6" placeholder="At least 6 characters">
+              <span class="form-hint">Hashed with bcrypt (salt rounds = 10)</span>
+            </div>
+            <div class="form-group">
+              <label for="regRole">Role Assignment</label>
+              <select id="regRole" class="form-select">
+                <option value="player" selected>Player (Standard user)</option>
+                <option value="admin">Admin (System administrator)</option>
+              </select>
+            </div>
+            <button type="submit" class="btn btn-secondary btn-block" id="registerSubmitBtn">
+              Create Account
+            </button>
+          </form>
+        </div>
+      </div>
+    </section>
+
+    <!-- Authenticated Dashboard View (Shown when logged in) -->
+    <section id="dashboardSection" class="dashboard-section hidden">
+      <!-- User Banner -->
+      <div class="user-banner">
+        <div class="user-banner-info">
+          <div class="avatar-circle" id="bannerAvatar">U</div>
+          <div>
+            <div class="user-name-line">
+              <h2 id="bannerUsername">Username</h2>
+              <span id="bannerRoleBadge" class="badge badge-player">Player</span>
+            </div>
+            <p id="bannerEmail" class="user-email-text">user@example.com</p>
+          </div>
+        </div>
+        <div class="user-banner-actions">
+          <button id="logoutBtn" class="btn btn-outline-danger">Log Out</button>
+        </div>
+      </div>
+
+      <!-- Live Role-Based Restrictions Verification Box -->
+      <div class="verification-card">
+        <div class="verification-header">
+          <div>
+            <h3>Role-Based Restriction Live Verification</h3>
+            <p>Test authorization against protected server endpoints to verify player vs admin rules.</p>
+          </div>
+          <span class="pill-note">Requirement 5 & Completion Gate 5</span>
+        </div>
+        <div class="verification-actions">
+          <button id="testPlayerEndpointBtn" class="btn btn-outline">
+            Test Player Action (<code>/api/player/dashboard</code>)
+          </button>
+          <button id="testAdminEndpointBtn" class="btn btn-outline">
+            Test Admin Action (<code>/api/admin/overview</code>)
+          </button>
+        </div>
+        <div id="testResultBox" class="test-result-box hidden">
+          <div class="result-header">
+            <span id="resultStatusTag" class="status-tag">HTTP 200 OK</span>
+            <span id="resultEndpoint" class="result-endpoint">/api/player/dashboard</span>
+          </div>
+          <pre id="resultBody" class="result-json"></pre>
+        </div>
+      </div>
+
+      <!-- Player Zone -->
+      <div class="content-card">
+        <div class="card-title-row">
+          <h3>Player Zone</h3>
+          <span class="badge badge-player">Accessible to All Authenticated Users</span>
+        </div>
+        <div class="stats-row">
+          <div class="stat-box">
+            <span class="stat-number" id="playerQuizzesCount">5</span>
+            <span class="stat-label">Available Quizzes</span>
+          </div>
+          <div class="stat-box">
+            <span class="stat-number">0</span>
+            <span class="stat-label">Completed</span>
+          </div>
+          <div class="stat-box">
+            <span class="stat-number">Active</span>
+            <span class="stat-label">Session Status</span>
+          </div>
+        </div>
+        <p class="section-caption">Phase 1 establishes the verified identity and session for player gameplay in upcoming phases.</p>
+      </div>
+
+      <!-- Admin Zone (Strictly restricted to Admin role) -->
+      <div id="adminZone" class="content-card admin-card hidden">
+        <div class="card-title-row">
+          <div>
+            <h3>Administrator Control Center</h3>
+            <p>Strictly restricted to users with the <code>admin</code> role. Players receive HTTP 403 Forbidden.</p>
+          </div>
+          <span class="badge badge-admin">Admin Privileges Active</span>
+        </div>
+
+        <!-- Registered Users Database Table -->
+        <div class="table-container">
+          <div class="table-header-row">
+            <h4>PostgreSQL Registered Users Table</h4>
+            <button id="refreshUsersBtn" class="btn-sm btn-ghost">Refresh Table</button>
+          </div>
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Username</th>
+                <th>Email</th>
+                <th>Role</th>
+                <th>Created At</th>
+              </tr>
+            </thead>
+            <tbody id="adminUsersTableBody">
+              <tr>
+                <td colspan="5" class="table-loading">Loading users from PostgreSQL...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Admin Action Execution -->
+        <div class="admin-actions-bar">
+          <div>
+            <strong>Trigger Protected System Action:</strong>
+            <span class="form-hint">Tests POST /api/admin/system-action</span>
+          </div>
+          <button id="runAdminActionBtn" class="btn btn-sm btn-primary">Execute Maintenance Ping</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Phase 1 Verification Checklist -->
+    <section class="checklist-section">
+      <div class="checklist-header">
+        <h3>Phase 1 Completion Gate Checklist</h3>
+        <p>Built according to strict non-negotiable rules on branch <code>phase-1-foundation-auth</code>.</p>
+      </div>
+      <div class="checklist-grid">
+        <div class="check-item checked">
+          <div class="check-icon">✓</div>
+          <div>
+            <strong>Working Express server</strong>
+            <p>Serves the frontend and JSON API on port 3000</p>
+          </div>
+        </div>
+        <div class="check-item checked">
+          <div class="check-icon">✓</div>
+          <div>
+            <strong>PostgreSQL connection & schema</strong>
+            <p>Users table with unique username/email, role CHECK constraint</p>
+          </div>
+        </div>
+        <div class="check-item checked">
+          <div class="check-icon">✓</div>
+          <div>
+            <strong>Registration, login, logout</strong>
+            <p>Session-backed authentication with cookie management</p>
+          </div>
+        </div>
+        <div class="check-item checked">
+          <div class="check-icon">✓</div>
+          <div>
+            <strong>Secure password hashing</strong>
+            <p>bcrypt (10 rounds), no plaintext or hash exposure</p>
+          </div>
+        </div>
+        <div class="check-item checked">
+          <div class="check-icon">✓</div>
+          <div>
+            <strong>Role-based restrictions</strong>
+            <p>Player and admin roles enforced at middleware & route levels</p>
+          </div>
+        </div>
+        <div class="check-item checked">
+          <div class="check-icon">✓</div>
+          <div>
+            <strong>Zero committed secrets</strong>
+            <p>Git-ignored .env, .dev.env.json, and safe environment configs</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="app-footer">
+    <p>Quiz Demo • Phase 1: Foundation and Authentication • Git Branch: <code>phase-1-foundation-auth</code></p>
+  </footer>
+
+  <script src="/app.js"></script>
+</body>
+</html>
