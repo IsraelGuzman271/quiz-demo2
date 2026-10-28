@@ -1,15 +1,19 @@
-// Quiz Demo - Phase 1 Foundation & Phase 2 Quiz Engine Client Application
+// Quiz Demo - Phase 1 Foundation, Phase 2 Quiz Engine & Phase 3 Attempts/User History
 
 let currentUser = null;
 let activeQuiz = null;
 let currentQuestionIndex = 0;
 let userAnswers = {}; // map: questionId -> selectedIndex (0-3)
 
-// DOM Elements - Navigation & Shell
+// DOM Elements - Shell & Tabs
 const tabQuizzesBtn = document.getElementById('tabQuizzesBtn');
+const tabHistoryBtn = document.getElementById('tabHistoryBtn');
 const tabAuthRolesBtn = document.getElementById('tabAuthRolesBtn');
+
 const quizEngineSection = document.getElementById('quizEngineSection');
+const historySection = document.getElementById('historySection');
 const authRolesSection = document.getElementById('authRolesSection');
+
 const dbStatusBadge = document.getElementById('dbStatusBadge');
 const userHeaderWidget = document.getElementById('userHeaderWidget');
 const notificationArea = document.getElementById('notificationArea');
@@ -43,8 +47,21 @@ const resultsTierBadge = document.getElementById('resultsTierBadge');
 const resultsQuizTitle = document.getElementById('resultsQuizTitle');
 const resultsMessageText = document.getElementById('resultsMessageText');
 const retryQuizBtn = document.getElementById('retryQuizBtn');
+const resultsViewHistoryBtn = document.getElementById('resultsViewHistoryBtn');
 const chooseAnotherQuizBtn = document.getElementById('chooseAnotherQuizBtn');
 const resultsQuestionsList = document.getElementById('resultsQuestionsList');
+
+// DOM Elements - History Section (Phase 3)
+const historyGuestBanner = document.getElementById('historyGuestBanner');
+const historySignInBtn = document.getElementById('historySignInBtn');
+const historyDashboard = document.getElementById('historyDashboard');
+const histStatCompleted = document.getElementById('histStatCompleted');
+const histStatAvg = document.getElementById('histStatAvg');
+const histStatBest = document.getElementById('histStatBest');
+const histStatMastered = document.getElementById('histStatMastered');
+const historyShowIncompleteCheckbox = document.getElementById('historyShowIncompleteCheckbox');
+const refreshHistoryBtn = document.getElementById('refreshHistoryBtn');
+const historyTableBody = document.getElementById('historyTableBody');
 
 // DOM Elements - Auth & Role Verification (Phase 1)
 const authFormsContainer = document.getElementById('authFormsContainer');
@@ -103,20 +120,26 @@ function escapeHtml(str) {
     .replace(/'/g, '&#039;');
 }
 
-// Tab Switching
-tabQuizzesBtn.addEventListener('click', () => {
-  tabQuizzesBtn.classList.add('active');
-  tabAuthRolesBtn.classList.remove('active');
-  quizEngineSection.classList.remove('hidden');
-  authRolesSection.classList.add('hidden');
-});
+// Tab Switching Helper
+function switchTab(tab) {
+  tabQuizzesBtn.classList.toggle('active', tab === 'quizzes');
+  tabHistoryBtn.classList.toggle('active', tab === 'history');
+  tabAuthRolesBtn.classList.toggle('active', tab === 'auth');
 
-tabAuthRolesBtn.addEventListener('click', () => {
-  tabAuthRolesBtn.classList.add('active');
-  tabQuizzesBtn.classList.remove('active');
-  authRolesSection.classList.remove('hidden');
-  quizEngineSection.classList.add('hidden');
-});
+  quizEngineSection.classList.toggle('hidden', tab !== 'quizzes');
+  historySection.classList.toggle('hidden', tab !== 'history');
+  authRolesSection.classList.toggle('hidden', tab !== 'auth');
+
+  if (tab === 'history') {
+    loadPlayerHistory();
+  }
+}
+
+tabQuizzesBtn.addEventListener('click', () => switchTab('quizzes'));
+tabHistoryBtn.addEventListener('click', () => switchTab('history'));
+tabAuthRolesBtn.addEventListener('click', () => switchTab('auth'));
+historySignInBtn.addEventListener('click', () => switchTab('auth'));
+resultsViewHistoryBtn.addEventListener('click', () => switchTab('history'));
 
 // Check system health & database state
 async function checkHealth() {
@@ -133,7 +156,7 @@ async function checkHealth() {
 }
 
 // ==========================================
-// PHASE 2: QUIZ ENGINE IMPLEMENTATION
+// PHASE 2 & 3: QUIZ ENGINE & ATTEMPTS
 // ==========================================
 
 // 1. Load Quiz Catalog
@@ -172,6 +195,7 @@ async function loadQuizzes() {
 // 2. Start Quiz Flow
 window.startQuiz = async function (quizId) {
   try {
+    switchTab('quizzes');
     showNotification('Loading quiz questions...', 'info');
     const res = await fetch(`/api/quizzes/${quizId}`);
     if (!res.ok) {
@@ -197,7 +221,6 @@ window.startQuiz = async function (quizId) {
     quizResultsView.classList.add('hidden');
     quizTakingView.classList.remove('hidden');
 
-    // Populate active quiz metadata
     activeQuizTitle.textContent = activeQuiz.title;
     activeQuizCategory.textContent = activeQuiz.category;
     activeQuizDifficulty.textContent = activeQuiz.difficulty;
@@ -261,7 +284,6 @@ function renderCurrentQuestion() {
     `;
   }).join('');
 
-  // Update answer status
   if (currentSelected !== undefined) {
     answeredStatusText.textContent = `Selected: Option ${optionLetters[currentSelected]}`;
     answeredStatusText.style.color = '#34d399';
@@ -270,7 +292,6 @@ function renderCurrentQuestion() {
     answeredStatusText.style.color = 'var(--text-muted)';
   }
 
-  // Navigation button states
   prevQuestionBtn.disabled = currentQuestionIndex === 0;
 
   if (currentQuestionIndex === total - 1) {
@@ -305,11 +326,32 @@ nextQuestionBtn.addEventListener('click', () => {
   }
 });
 
-exitQuizBtn.addEventListener('click', () => {
+// Exit Quiz (Handles abandoned incomplete attempt if partially answered)
+exitQuizBtn.addEventListener('click', async () => {
+  if (activeQuiz && Object.keys(userAnswers).length > 0) {
+    const answeredCount = Object.keys(userAnswers).length;
+    const confirmExit = window.confirm(
+      `You have answered ${answeredCount} question(s). Exiting now will abandon this attempt (unfinished attempts will not count as completed).\n\nExit quiz?`
+    );
+    if (!confirmExit) return;
+
+    // Record as incomplete/abandoned
+    try {
+      await fetch(`/api/quizzes/${activeQuiz.id}/abandon`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ partialAnswers: userAnswers }),
+      });
+    } catch (e) {
+      // ignore
+    }
+  }
+
   quizTakingView.classList.add('hidden');
   quizResultsView.classList.add('hidden');
   quizCatalogView.classList.remove('hidden');
   activeQuiz = null;
+  loadQuizzes();
 });
 
 // 7. Submit Quiz Answers
@@ -347,6 +389,9 @@ submitQuizBtn.addEventListener('click', async () => {
 
     showNotification(`Quiz scored: ${data.score}/${data.totalQuestions} (${data.percentage}%)`, 'success');
     renderResultsPage(data);
+    if (currentUser) {
+      loadPlayerHistory();
+    }
   } catch (err) {
     showNotification('Network error submitting quiz.', 'error');
   } finally {
@@ -379,7 +424,6 @@ function renderResultsPage(data) {
     resultsMessageText.textContent = `You scored ${data.percentage}%. Review the explanations below and retry!`;
   }
 
-  // Render question breakdown
   const optionLetters = ['A', 'B', 'C', 'D'];
   resultsQuestionsList.innerHTML = data.results.map((r, idx) => {
     const itemClass = r.isCorrect ? 'item-correct' : 'item-incorrect';
@@ -452,6 +496,86 @@ chooseAnotherQuizBtn.addEventListener('click', () => {
 });
 
 // ==========================================
+// PHASE 3: USER ATTEMPT HISTORY LOGIC
+// ==========================================
+async function loadPlayerHistory() {
+  if (!currentUser) {
+    historyGuestBanner.classList.remove('hidden');
+    historyDashboard.classList.add('hidden');
+    return;
+  }
+
+  historyGuestBanner.classList.add('hidden');
+  historyDashboard.classList.remove('hidden');
+  historyTableBody.innerHTML = '<tr><td colspan="8" class="table-loading">Loading your history from PostgreSQL...</td></tr>';
+
+  try {
+    const includeIncomplete = historyShowIncompleteCheckbox.checked;
+    const res = await fetch(`/api/player/history?includeIncomplete=${includeIncomplete}`);
+    if (!res.ok) {
+      if (res.status === 401) {
+        historyGuestBanner.classList.remove('hidden');
+        historyDashboard.classList.add('hidden');
+        return;
+      }
+      throw new Error('Failed to fetch history');
+    }
+
+    const data = await res.json();
+    const stats = data.stats || { totalCompleted: 0, averagePercentage: 0, bestPercentage: 0, quizzesMastered: 0 };
+    const attempts = data.attempts || [];
+
+    // Render Stats Cards (Strictly reflects completed attempts)
+    histStatCompleted.textContent = stats.totalCompleted;
+    histStatAvg.textContent = `${stats.averagePercentage}%`;
+    histStatBest.textContent = `${stats.bestPercentage}%`;
+    histStatMastered.textContent = stats.quizzesMastered;
+
+    if (attempts.length === 0) {
+      historyTableBody.innerHTML = `
+        <tr>
+          <td colspan="8" style="text-align: center; color: var(--text-muted); padding: 2rem;">
+            No quiz attempts recorded yet.
+            <div style="margin-top: 0.75rem;">
+              <button class="btn btn-sm btn-primary" onclick="switchTab('quizzes')">Take Your First Quiz</button>
+            </div>
+          </td>
+        </tr>
+      `;
+      return;
+    }
+
+    historyTableBody.innerHTML = attempts.map((a, idx) => {
+      const isCompleted = a.status === 'completed';
+      const statusClass = isCompleted ? 'status-tag-completed' : 'status-tag-incomplete';
+      const statusLabel = isCompleted ? 'Completed' : 'Incomplete';
+      const completedDate = new Date(a.completed_at);
+      const formattedDate = `${completedDate.toLocaleDateString()} ${completedDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+
+      return `
+        <tr>
+          <td>#${a.id}</td>
+          <td><strong>${escapeHtml(a.quiz_title)}</strong></td>
+          <td><span class="badge badge-player">${escapeHtml(a.category || 'General')}</span></td>
+          <td>${a.score} / ${a.total_questions}</td>
+          <td><strong>${a.percentage}%</strong></td>
+          <td><span class="status-tag ${statusClass}">${statusLabel}</span></td>
+          <td style="font-size:0.8rem; color: var(--text-muted);">${formattedDate}</td>
+          <td>
+            <button class="btn-sm btn-ghost" onclick="startQuiz('${escapeHtml(a.quiz_id)}')">Retry</button>
+          </td>
+        </tr>
+      `;
+    }).join('');
+  } catch (err) {
+    historyTableBody.innerHTML = '<tr><td colspan="8" class="table-error">Failed to load history from database.</td></tr>';
+  }
+}
+
+refreshHistoryBtn.addEventListener('click', loadPlayerHistory);
+historyShowIncompleteCheckbox.addEventListener('change', loadPlayerHistory);
+
+// ==========================================
 // PHASE 1: AUTHENTICATION & ROLE MANAGEMENT
 // ==========================================
 
@@ -480,11 +604,14 @@ function updateAuthUI(user) {
     } else {
       adminZone.classList.add('hidden');
     }
+
+    loadPlayerHistory();
   } else {
     authFormsContainer.classList.remove('hidden');
     authenticatedPanels.classList.add('hidden');
     userHeaderWidget.innerHTML = '<span class="guest-text">Guest Player</span>';
     testResultBox.classList.add('hidden');
+    loadPlayerHistory();
   }
 }
 
@@ -526,6 +653,7 @@ registerForm.addEventListener('submit', async (e) => {
     showNotification(`Registered successfully as ${data.user.role}!`, 'success');
     registerForm.reset();
     updateAuthUI(data.user);
+    switchTab('quizzes');
   } catch (err) {
     showNotification('Network error during registration.', 'error');
   }
@@ -553,6 +681,7 @@ loginForm.addEventListener('submit', async (e) => {
     showNotification(`Welcome back, ${data.user.username}!`, 'success');
     loginForm.reset();
     updateAuthUI(data.user);
+    switchTab('quizzes');
   } catch (err) {
     showNotification('Network error during login.', 'error');
   }
@@ -565,6 +694,7 @@ logoutBtn.addEventListener('click', async () => {
     if (res.ok) {
       showNotification('Logged out successfully.', 'info');
       updateAuthUI(null);
+      switchTab('quizzes');
     }
   } catch (err) {
     showNotification('Failed to log out.', 'error');

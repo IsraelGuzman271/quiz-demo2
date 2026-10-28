@@ -4,9 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Quiz Demo</title>
-  <meta name="description" content="Full-stack Node.js Express quiz application with PostgreSQL database and role-based authentication.">
+  <meta name="description" content="Full-stack Node.js Express quiz application with PostgreSQL database, role-based authentication, and personal attempt history.">
   <meta property="og:title" content="Quiz Demo">
-  <meta property="og:description" content="Full-stack Node.js Express quiz application with PostgreSQL database and role-based authentication.">
+  <meta property="og:description" content="Full-stack Node.js Express quiz application with PostgreSQL database, role-based authentication, and personal attempt history.">
   <link rel="stylesheet" href="/style.css">
 </head>
 <body>
@@ -21,13 +21,14 @@
         </div>
         <div class="brand-text">
           <h1>Quiz Demo</h1>
-          <span class="qa-badge">Branch: phase-2-quiz-engine</span>
+          <span class="qa-badge">Branch: phase-3-attempts-history</span>
         </div>
       </div>
 
       <!-- Navigation Tabs -->
       <nav class="nav-tabs">
         <button id="tabQuizzesBtn" class="nav-tab active">Quizzes</button>
+        <button id="tabHistoryBtn" class="nav-tab">My History</button>
         <button id="tabAuthRolesBtn" class="nav-tab">Auth &amp; Roles</button>
       </nav>
 
@@ -50,15 +51,15 @@
   <main class="main-container">
 
     <!-- ========================================== -->
-    <!-- SECTION 1: QUIZ ENGINE (Phase 2 Focus)     -->
+    <!-- SECTION 1: QUIZ ENGINE                     -->
     <!-- ========================================== -->
     <section id="quizEngineSection" class="quiz-engine-section">
 
       <!-- View A: Quiz Selection Catalog -->
       <div id="quizCatalogView" class="quiz-catalog-view">
         <div class="section-hero">
-          <h2>Phase 2: Quiz Selection</h2>
-          <p>Choose a quiz to start. Each question features exactly four answer choices and one correct answer.</p>
+          <h2>Select a Quiz Challenge</h2>
+          <p>Choose from Soccer, Geography Capitals, American Football, or English Vocabulary. Exactly four choices per question.</p>
         </div>
 
         <div id="quizListGrid" class="quiz-cards-grid">
@@ -71,7 +72,7 @@
         <!-- Quiz Active Header -->
         <div class="quiz-active-header">
           <div class="quiz-meta-info">
-            <button id="exitQuizBtn" class="btn-sm btn-ghost">&larr; Exit to Quizzes</button>
+            <button id="exitQuizBtn" class="btn-sm btn-ghost">&larr; Exit Quiz</button>
             <h2 id="activeQuizTitle" class="quiz-title-display">Quiz Title</h2>
             <div class="quiz-badges">
               <span id="activeQuizCategory" class="badge badge-player">Category</span>
@@ -127,10 +128,11 @@
           </div>
           <div class="results-hero-info">
             <span id="resultsTierBadge" class="badge badge-player">PASSED</span>
-            <h2 id="resultsQuizTitle">JavaScript &amp; Web Fundamentals</h2>
+            <h2 id="resultsQuizTitle">Quiz Title</h2>
             <p id="resultsMessageText" class="results-message">Great job! You answered 4 out of 5 questions correctly.</p>
             <div class="results-action-buttons">
               <button id="retryQuizBtn" class="btn btn-primary">Retry Quiz</button>
+              <button id="resultsViewHistoryBtn" class="btn btn-secondary">View My History</button>
               <button id="chooseAnotherQuizBtn" class="btn btn-outline">Choose Another Quiz</button>
             </div>
           </div>
@@ -152,7 +154,96 @@
 
 
     <!-- =================================================== -->
-    <!-- SECTION 2: AUTH & ROLES (Preserved from Phase 1)     -->
+    <!-- SECTION 2: MY HISTORY (Phase 3 Focus)               -->
+    <!-- =================================================== -->
+    <section id="historySection" class="history-section hidden">
+      <div class="section-hero">
+        <h2>Personal Attempt History</h2>
+        <p>Review your past completed attempts, performance stats, and accuracy scores stored in PostgreSQL.</p>
+      </div>
+
+      <!-- Guest Warning (When not logged in) -->
+      <div id="historyGuestBanner" class="content-card history-guest-banner hidden">
+        <div class="guest-banner-content">
+          <div class="guest-banner-icon">🔒</div>
+          <div>
+            <h3>Sign in to access your permanent quiz history</h3>
+            <p>Completed attempts are linked to your player account and preserved across sessions.</p>
+          </div>
+          <button id="historySignInBtn" class="btn btn-primary">Go to Login / Register</button>
+        </div>
+      </div>
+
+      <!-- Logged-in History Dashboard -->
+      <div id="historyDashboard" class="history-dashboard hidden">
+        <!-- Personal Performance Stats Cards -->
+        <div class="history-stats-grid">
+          <div class="history-stat-card">
+            <span class="stat-big-val" id="histStatCompleted">0</span>
+            <span class="stat-desc-label">Completed Quizzes</span>
+            <span class="stat-subtext">Unfinished attempts excluded</span>
+          </div>
+          <div class="history-stat-card">
+            <span class="stat-big-val" id="histStatAvg">0%</span>
+            <span class="stat-desc-label">Average Accuracy</span>
+            <span class="stat-subtext">Across completed quizzes</span>
+          </div>
+          <div class="history-stat-card">
+            <span class="stat-big-val" id="histStatBest">0%</span>
+            <span class="stat-desc-label">Best Score</span>
+            <span class="stat-subtext">Top percentage achieved</span>
+          </div>
+          <div class="history-stat-card">
+            <span class="stat-big-val" id="histStatMastered">0</span>
+            <span class="stat-desc-label">Mastered (80%+)</span>
+            <span class="stat-subtext">High achievement score</span>
+          </div>
+        </div>
+
+        <!-- History Table Card -->
+        <div class="content-card">
+          <div class="history-table-header">
+            <div>
+              <h3>Attempt Records</h3>
+              <p>Chronological log of your quiz submissions</p>
+            </div>
+            <div class="history-filter-controls">
+              <label class="filter-checkbox-label">
+                <input type="checkbox" id="historyShowIncompleteCheckbox">
+                <span>Include unfinished / abandoned attempts</span>
+              </label>
+              <button id="refreshHistoryBtn" class="btn-sm btn-ghost">Refresh</button>
+            </div>
+          </div>
+
+          <div class="table-container">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Attempt #</th>
+                  <th>Quiz Title</th>
+                  <th>Category</th>
+                  <th>Score</th>
+                  <th>Percentage</th>
+                  <th>Status</th>
+                  <th>Completed At</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="historyTableBody">
+                <tr>
+                  <td colspan="8" class="table-loading">Loading your history from PostgreSQL...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- =================================================== -->
+    <!-- SECTION 3: AUTH & ROLES (Preserved from Phase 1)     -->
     <!-- =================================================== -->
     <section id="authRolesSection" class="auth-roles-section hidden">
 
@@ -320,53 +411,53 @@
       </div>
     </section>
 
-    <!-- Phase 2 Verification Checklist -->
+    <!-- Phase 3 Verification Checklist -->
     <section class="checklist-section">
       <div class="checklist-header">
-        <h3>Phase 2 Completion Gate Checklist</h3>
-        <p>Built according to strict non-negotiable rules on branch <code>phase-2-quiz-engine</code>.</p>
+        <h3>Phase 3 Completion Gate Checklist</h3>
+        <p>Built according to strict non-negotiable rules on branch <code>phase-3-attempts-history</code>.</p>
       </div>
       <div class="checklist-grid">
         <div class="check-item checked">
           <div class="check-icon">✓</div>
           <div>
-            <strong>Quiz Selection</strong>
-            <p>Players can select from multiple quizzes with difficulty &amp; category tags</p>
+            <strong>Persistent Completed Attempts</strong>
+            <p>Saved with user, quiz, result, and timestamp; persists across logout and login</p>
           </div>
         </div>
         <div class="check-item checked">
           <div class="check-icon">✓</div>
           <div>
-            <strong>Exactly 4 Choices &amp; 1 Correct Answer</strong>
-            <p>Verified on all database questions; options omitted to client prior to submission</p>
+            <strong>Personal History Isolation</strong>
+            <p>History strictly contains the authenticated player's attempts, never another user's</p>
           </div>
         </div>
         <div class="check-item checked">
           <div class="check-icon">✓</div>
           <div>
-            <strong>Score &amp; Percentage Calculation</strong>
-            <p>Accurate grading server-side with score, totalQuestions, and rounded percentage</p>
+            <strong>Retry Record Generation</strong>
+            <p>Retrying a quiz produces a distinct new attempt record with independent score</p>
           </div>
         </div>
         <div class="check-item checked">
           <div class="check-icon">✓</div>
           <div>
-            <strong>Results Page &amp; Detailed Review</strong>
-            <p>Displays performance tier, user choice, correct answer, and explanation</p>
+            <strong>Incomplete Attempt Isolation</strong>
+            <p>Unfinished and incomplete submissions do not count as completed attempts</p>
           </div>
         </div>
         <div class="check-item checked">
           <div class="check-icon">✓</div>
           <div>
-            <strong>Retry Flow &amp; Reselection</strong>
-            <p>Allows retrying quiz with fresh attempt or choosing another quiz</p>
+            <strong>Verified Quiz Scoring</strong>
+            <p>Soccer, Hispanic Capitals, Football, and Vocab scoring remains 100% accurate</p>
           </div>
         </div>
         <div class="check-item checked">
           <div class="check-icon">✓</div>
           <div>
-            <strong>Preserved Phase 1 Auth &amp; Access Rules</strong>
-            <p>Registration, login, bcrypt hashing, and player vs admin restrictions unbroken</p>
+            <strong>Phase 1 &amp; Phase 2 Preservation</strong>
+            <p>Authentication, role-based protection, and 4-choice questions fully intact</p>
           </div>
         </div>
       </div>
@@ -375,7 +466,7 @@
   </main>
 
   <footer class="app-footer">
-    <p>Quiz Demo • Phase 2: Quiz Engine • Git Branch: <code>phase-2-quiz-engine</code></p>
+    <p>Quiz Demo • Phase 3: Attempts and User History • Git Branch: <code>phase-3-attempts-history</code></p>
   </footer>
 
   <script src="/app.js"></script>

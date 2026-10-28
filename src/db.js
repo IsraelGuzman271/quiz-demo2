@@ -49,207 +49,188 @@ async function query(text, params = []) {
 
 /**
  * Default Seed Quizzes data
+ * Includes: Soccer, Capitals of Hispanic Countries, American Football, and English Vocabulary.
  * Each question has EXACTLY four answer choices and one correct answer index (0-3).
  */
 const SEED_QUIZZES = [
   {
-    id: 'js-fundamentals',
-    title: 'JavaScript & Web Fundamentals',
-    description: 'Test your understanding of modern JavaScript concepts, ES6+ features, and web standards.',
-    category: 'JavaScript',
+    id: 'soccer',
+    title: 'Soccer (Association Football)',
+    description: 'Test your knowledge of the global game: World Cups, legendary players, iconic clubs, and official rules.',
+    category: 'Soccer',
     difficulty: 'Medium',
     questions: [
       {
-        id: 'js-q1',
-        question: 'Which keyword declares a block-scoped variable that cannot be reassigned in JavaScript?',
-        options: ['var', 'let', 'const', 'static'],
+        id: 'soc-q1',
+        question: "Which nation has won the most FIFA Men's World Cup titles in history?",
+        options: ['Germany', 'Italy', 'Brazil', 'Argentina'],
         correctIndex: 2,
-        explanation: 'const creates a block-scoped constant whose identifier cannot be reassigned, though object properties can still be modified.',
+        explanation: 'Brazil has won a record five FIFA World Cup trophies (1958, 1962, 1970, 1994, and 2002).',
       },
       {
-        id: 'js-q2',
-        question: 'What is the return value of typeof null in JavaScript?',
-        options: ['"null"', '"undefined"', '"object"', '"boolean"'],
-        correctIndex: 2,
-        explanation: 'In JavaScript, typeof null returns "object". This is a historic quirk originating from the very first JavaScript implementation.',
-      },
-      {
-        id: 'js-q3',
-        question: 'Which array method creates a new array populated with the results of calling a provided function on every element?',
-        options: ['forEach()', 'map()', 'filter()', 'reduce()'],
+        id: 'soc-q2',
+        question: 'What is the standard regulation duration of a professional soccer match (excluding extra time)?',
+        options: ['80 minutes', '90 minutes', '100 minutes', '120 minutes'],
         correctIndex: 1,
-        explanation: 'map() returns a new array with the results of applying the transform callback to each element of the original array.',
+        explanation: 'Regulation matches consist of two 45-minute halves for a total of 90 minutes plus stoppage time.',
       },
       {
-        id: 'js-q4',
-        question: 'What does the strict equality operator (===) compare in JavaScript?',
-        options: [
-          'Value only with type coercion',
-          'Both value and data type without type coercion',
-          'Memory address reference only',
-          'String representation of both operands',
-        ],
-        correctIndex: 1,
-        explanation: 'The strict equality operator (===) compares both the value and the type of operands without performing automatic type conversion.',
-      },
-      {
-        id: 'js-q5',
-        question: 'Which statement accurately describes how JavaScript Promises behave?',
-        options: [
-          'Promises execute synchronously on the call stack',
-          'Promises can transition between resolved and rejected multiple times',
-          'Promises represent the eventual completion or failure of an asynchronous operation',
-          'Promises block the JavaScript main thread until settled',
-        ],
+        id: 'soc-q3',
+        question: 'Which club holds the all-time record for the most UEFA Champions League titles?',
+        options: ['AC Milan', 'Bayern Munich', 'Real Madrid', 'Liverpool'],
         correctIndex: 2,
-        explanation: 'A Promise is a proxy for a value not necessarily known when the promise is created. It transitions once from pending to fulfilled or rejected.',
+        explanation: 'Real Madrid leads European club football with 15 European Cup / UEFA Champions League titles.',
+      },
+      {
+        id: 'soc-q4',
+        question: "Who has won the most Men's Ballon d'Or awards in football history?",
+        options: ['Cristiano Ronaldo', 'Lionel Messi', 'Pelé', 'Johan Cruyff'],
+        correctIndex: 1,
+        explanation: "Lionel Messi has won a record 8 Ballon d'Or trophies across his historic career.",
+      },
+      {
+        id: 'soc-q5',
+        question: 'From what distance from the goal line is a standard penalty kick taken?',
+        options: ['10 yards (9.15 m)', '12 yards (11 m)', '15 yards (13.7 m)', '18 yards (16.5 m)'],
+        correctIndex: 1,
+        explanation: 'A penalty kick is taken from the penalty mark located exactly 12 yards (11 meters) from the center of the goal line.',
       },
     ],
   },
   {
-    id: 'postgres-db',
-    title: 'PostgreSQL & Database Essentials',
-    description: 'Master relational database modeling, SQL querying, constraints, and ACID properties.',
-    category: 'Databases',
+    id: 'hispanic-capitals',
+    title: 'Capitals of Hispanic Countries',
+    description: 'Journey across the Spanish-speaking world: test your geography knowledge on the capitals of Hispanic nations.',
+    category: 'Geography',
     difficulty: 'Medium',
     questions: [
       {
-        id: 'pg-q1',
-        question: 'Which SQL clause is used to filter aggregated grouped records (after GROUP BY)?',
-        options: ['WHERE', 'HAVING', 'LIMIT', 'FILTER'],
-        correctIndex: 1,
-        explanation: 'HAVING filters groups created by the GROUP BY clause, whereas WHERE filters individual rows before aggregation occurs.',
-      },
-      {
-        id: 'pg-q2',
-        question: 'What constraint uniquely identifies each record in a PostgreSQL database table?',
-        options: ['FOREIGN KEY', 'PRIMARY KEY', 'CHECK', 'DEFAULT'],
-        correctIndex: 1,
-        explanation: 'A PRIMARY KEY uniquely identifies each record in a database table and cannot contain NULL values.',
-      },
-      {
-        id: 'pg-q3',
-        question: 'Which command removes all rows from a table quickly without logging individual row deletions?',
-        options: ['DROP TABLE', 'DELETE ALL', 'TRUNCATE TABLE', 'REMOVE *'],
+        id: 'geo-q1',
+        question: 'What is the capital city of Colombia?',
+        options: ['Medellín', 'Cali', 'Bogotá', 'Cartagena'],
         correctIndex: 2,
-        explanation: 'TRUNCATE TABLE quickly deletes all rows from a table by bypassing row-by-row logging, making it faster than DELETE.',
+        explanation: 'Bogotá (Distrito Capital) is the high-altitude capital and largest city of Colombia.',
       },
       {
-        id: 'pg-q4',
-        question: 'In relational database theory, what does the ACID acronym stand for?',
-        options: [
-          'Atomicity, Consistency, Isolation, Durability',
-          'Authentication, Cryptography, Integrity, Decryption',
-          'Allocation, Concurrency, Indexing, Distribution',
-          'Array, Collection, Iteration, Dictionary',
-        ],
+        id: 'geo-q2',
+        question: 'What is the capital city of Argentina, situated along the Río de la Plata?',
+        options: ['Córdoba', 'Buenos Aires', 'Rosario', 'Mendoza'],
+        correctIndex: 1,
+        explanation: 'Buenos Aires is the federal capital and largest metropolitan area of Argentina.',
+      },
+      {
+        id: 'geo-q3',
+        question: 'Which city serves as the capital of Spain, home to the Prado Museum and Royal Palace?',
+        options: ['Barcelona', 'Seville', 'Valencia', 'Madrid'],
+        correctIndex: 3,
+        explanation: 'Madrid is the capital and largest municipality of Spain, located in the center of the country.',
+      },
+      {
+        id: 'geo-q4',
+        question: "What is the capital of Peru, founded in 1535 and known as the 'City of the Kings'?",
+        options: ['Cusco', 'Arequipa', 'Lima', 'Trujillo'],
+        correctIndex: 2,
+        explanation: 'Lima is the coastal capital city of Peru, established as the Ciudad de los Reyes by Francisco Pizarro in 1535.',
+      },
+      {
+        id: 'geo-q5',
+        question: 'What is the capital city of Costa Rica?',
+        options: ['San José', 'Alajuela', 'Heredia', 'Cartago'],
         correctIndex: 0,
-        explanation: 'ACID stands for Atomicity (all-or-nothing), Consistency (rules maintained), Isolation (independent transactions), and Durability (persisted).',
-      },
-      {
-        id: 'pg-q5',
-        question: 'Which JOIN returns all records from the left table and matched records from the right table?',
-        options: ['INNER JOIN', 'RIGHT JOIN', 'LEFT JOIN', 'FULL OUTER JOIN'],
-        correctIndex: 2,
-        explanation: 'A LEFT JOIN returns all rows from the left table and the matching rows from the right table (or NULLs where there is no match).',
+        explanation: 'San José is the capital and cultural center of Costa Rica, located in the central plateau region.',
       },
     ],
   },
   {
-    id: 'node-express',
-    title: 'Node.js & Express Architecture',
-    description: 'Understand backend web servers, HTTP status codes, middleware stacks, and async I/O.',
-    category: 'Backend',
-    difficulty: 'Easy',
+    id: 'football',
+    title: 'American Football & NFL',
+    description: 'Test your gridiron knowledge on NFL rules, scoring systems, field dimensions, and Super Bowl milestones.',
+    category: 'Football',
+    difficulty: 'Medium',
     questions: [
       {
-        id: 'node-q1',
-        question: 'What is the primary function of middleware in an Express application?',
-        options: [
-          'Directly compile JavaScript code to machine instructions',
-          'Access request and response objects and invoke the next middleware function',
-          'Manage SQL database migrations automatically',
-          'Render CSS style sheets inside client browsers',
-        ],
+        id: 'fb-q1',
+        question: 'How many points is a touchdown worth in American football?',
+        options: ['3 points', '6 points', '7 points', '8 points'],
         correctIndex: 1,
-        explanation: 'Middleware functions have access to the request object (req), response object (res), and the next middleware function in the cycle.',
+        explanation: 'A touchdown scores 6 points, followed by a try for 1 point (extra point kick) or 2 points (two-point conversion).',
       },
       {
-        id: 'node-q2',
-        question: 'Which HTTP status code signifies that a client is not authenticated?',
-        options: ['200 OK', '401 Unauthorized', '403 Forbidden', '404 Not Found'],
+        id: 'fb-q2',
+        question: 'How long is the field of play in an NFL game between the two goal lines (excluding end zones)?',
+        options: ['80 yards', '100 yards', '110 yards', '120 yards'],
         correctIndex: 1,
-        explanation: 'HTTP 401 Unauthorized indicates that the request requires user authentication credentials.',
+        explanation: 'The field of play is 100 yards from goal line to goal line. Including both 10-yard end zones, the total field is 120 yards.',
       },
       {
-        id: 'node-q3',
-        question: 'Which HTTP status code signifies that an authenticated user is forbidden from accessing a resource (e.g. non-admin)?',
-        options: ['400 Bad Request', '401 Unauthorized', '403 Forbidden', '500 Server Error'],
+        id: 'fb-q3',
+        question: 'Which quarterback has won the most Super Bowl titles in NFL history?',
+        options: ['Joe Montana', 'Peyton Manning', 'Tom Brady', 'Patrick Mahomes'],
         correctIndex: 2,
-        explanation: 'HTTP 403 Forbidden indicates that the server understands who the user is, but the user does not have permission for that action.',
+        explanation: 'Tom Brady won a record seven Super Bowls (six with New England and one with Tampa Bay).',
       },
       {
-        id: 'node-q4',
-        question: 'What is the core event-driven concurrency model used by Node.js?',
-        options: [
-          'Single-threaded event loop with non-blocking I/O',
-          'Multi-threaded process per connection architecture',
-          'Synchronous blocking execution thread pool only',
-          'Forking a new operating system process for each incoming socket',
-        ],
-        correctIndex: 0,
-        explanation: 'Node.js uses an event-driven, non-blocking I/O model on a single execution thread with libuv handling background I/O operations.',
+        id: 'fb-q4',
+        question: 'How many downs does the offensive team have to advance the ball 10 yards?',
+        options: ['3 downs', '4 downs', '5 downs', '6 downs'],
+        correctIndex: 1,
+        explanation: 'The offense is given a series of 4 downs to advance the ball at least 10 yards to earn a new first down.',
       },
       {
-        id: 'node-q5',
-        question: 'Which core Node.js module provides file system operations?',
-        options: ['http', 'path', 'fs', 'events'],
+        id: 'fb-q5',
+        question: 'How many points are awarded for a successful field goal in American football?',
+        options: ['1 point', '2 points', '3 points', '4 points'],
         correctIndex: 2,
-        explanation: 'The built-in "fs" module allows interaction with the file system both synchronously and asynchronously via Promises or callbacks.',
+        explanation: 'A field goal successfully kicked through the opponent goal posts during regular play scores 3 points.',
       },
     ],
   },
   {
-    id: 'computer-science',
-    title: 'Computer Science & Data Structures',
-    description: 'Fundamental algorithms, big-O time complexities, and core data structure concepts.',
-    category: 'Computer Science',
+    id: 'english-vocab',
+    title: 'English Vocabulary Mastery',
+    description: 'Challenge your lexicon with advanced English vocabulary, definitions, synonyms, and context usage.',
+    category: 'Vocabulary',
     difficulty: 'Hard',
     questions: [
       {
-        id: 'cs-q1',
-        question: 'What is the worst-case time complexity of binary search on a sorted array of size n?',
-        options: ['O(1)', 'O(log n)', 'O(n)', 'O(n^2)'],
+        id: 'vocab-q1',
+        question: "What is the definition of the word 'ephemeral'?",
+        options: ['Enduring forever', 'Lasting for a very short time', 'Difficult to comprehend', 'Extremely spacious'],
         correctIndex: 1,
-        explanation: 'Binary search halves the search space with each iteration, yielding an O(log n) time complexity in both average and worst cases.',
+        explanation: "'Ephemeral' describes something that is fleeting, transient, or lasting for only a brief period of time.",
       },
       {
-        id: 'cs-q2',
-        question: 'Which data structure operates strictly on a Last-In, First-Out (LIFO) principle?',
-        options: ['Queue', 'Stack', 'Linked List', 'Binary Heap'],
+        id: 'vocab-q2',
+        question: "Which word is the closest synonym for 'meticulous'?",
+        options: ['Careless', 'Painstaking', 'Aggressive', 'Indifferent'],
         correctIndex: 1,
-        explanation: 'A Stack is a LIFO (Last-In, First-Out) data structure where elements are pushed and popped from the same end (the top).',
+        explanation: "'Meticulous' means taking extreme care about minute details; precise and painstaking.",
       },
       {
-        id: 'cs-q3',
-        question: 'What is the average time complexity of lookups in a well-distributed Hash Table?',
-        options: ['O(1)', 'O(log n)', 'O(n)', 'O(n log n)'],
+        id: 'vocab-q3',
+        question: "What does the adjective 'garrulous' mean?",
+        options: ['Excessively talkative', 'Secretive and guarded', 'Fierce and warlike', 'Easily frightened'],
         correctIndex: 0,
-        explanation: 'With a good hash function and proper load factor, hash table lookups execute in O(1) constant average time.',
+        explanation: "'Garrulous' means pointlessly or annoyingly talkative, especially regarding trivial matters.",
       },
       {
-        id: 'cs-q4',
-        question: 'Which binary tree traversal visits the root node before visiting its left and right subtrees?',
-        options: ['In-order traversal', 'Pre-order traversal', 'Post-order traversal', 'Level-order traversal'],
+        id: 'vocab-q4',
+        question: "If an action is described as 'altruistic', what is its primary characteristic?",
+        options: [
+          'Motivated purely by financial profit',
+          'Selflessly devoted to the welfare of others',
+          'Hesitant and indecisive',
+          'Quick to anger without provocation',
+        ],
         correctIndex: 1,
-        explanation: 'Pre-order traversal visits nodes in the order: Root -> Left Subtree -> Right Subtree.',
+        explanation: "'Altruistic' means showing unselfish concern for and devotion to the well-being of other people.",
       },
       {
-        id: 'cs-q5',
-        question: 'Which algorithmic paradigm breaks a problem into independent subproblems and combines their solutions?',
-        options: ['Dynamic Programming', 'Divide and Conquer', 'Greedy Algorithm', 'Backtracking'],
+        id: 'vocab-q5',
+        question: "What does the word 'ubiquitous' mean?",
+        options: ['Rare and precious', 'Present or appearing everywhere', 'Outdated and obsolete', 'Unusually swift'],
         correctIndex: 1,
-        explanation: 'Divide and Conquer recursively breaks a problem into independent subproblems, solves them, and merges the solutions (e.g. Merge Sort).',
+        explanation: "'Ubiquitous' describes something that is omnipresent or found everywhere at the same time.",
       },
     ],
   },
@@ -301,7 +282,7 @@ async function initDb() {
   `;
   await p.query(createQuestionsTableQuery);
 
-  // Phase 2: Quiz Attempts table (storing scores, percentage, answers)
+  // Phase 2 & 3: Quiz Attempts table (storing scores, percentage, answers, status, and completion timestamp)
   const createAttemptsTableQuery = `
     CREATE TABLE IF NOT EXISTS quiz_attempts (
       id SERIAL PRIMARY KEY,
@@ -311,6 +292,7 @@ async function initDb() {
       total_questions INTEGER NOT NULL,
       percentage INTEGER NOT NULL,
       answers TEXT NOT NULL,
+      status VARCHAR(20) NOT NULL DEFAULT 'completed',
       completed_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
     );
   `;
@@ -325,23 +307,20 @@ async function initDb() {
 }
 
 /**
- * Seed quizzes and questions if not yet inserted
+ * Seed quizzes and questions, updating existing and syncing catalog
  */
 async function seedQuizzesIfEmpty() {
-  const countCheck = await query('SELECT COUNT(*) as count FROM quizzes');
-  const existingCount = parseInt(countCheck.rows[0].count, 10);
-
-  if (existingCount > 0) {
-    return;
-  }
-
-  console.log('[DB] Seeding default quizzes and questions with exactly 4 options each...');
+  console.log('[DB] Seeding default quizzes (Soccer, Hispanic Capitals, Football, English Vocab)...');
 
   for (const quiz of SEED_QUIZZES) {
     await query(
       `INSERT INTO quizzes (id, title, description, category, difficulty)
        VALUES ($1, $2, $3, $4, $5)
-       ON CONFLICT (id) DO NOTHING`,
+       ON CONFLICT (id) DO UPDATE SET
+         title = EXCLUDED.title,
+         description = EXCLUDED.description,
+         category = EXCLUDED.category,
+         difficulty = EXCLUDED.difficulty`,
       [quiz.id, quiz.title, quiz.description, quiz.category, quiz.difficulty]
     );
 
@@ -353,11 +332,22 @@ async function seedQuizzesIfEmpty() {
       await query(
         `INSERT INTO questions (id, quiz_id, question, options, correct_index, explanation, order_num)
          VALUES ($1, $2, $3, $4, $5, $6, $7)
-         ON CONFLICT (id) DO NOTHING`,
+         ON CONFLICT (id) DO UPDATE SET
+           quiz_id = EXCLUDED.quiz_id,
+           question = EXCLUDED.question,
+           options = EXCLUDED.options,
+           correct_index = EXCLUDED.correct_index,
+           explanation = EXCLUDED.explanation,
+           order_num = EXCLUDED.order_num`,
         [q.id, quiz.id, q.question, JSON.stringify(q.options), q.correctIndex, q.explanation, order++]
       );
     }
   }
+
+  // Remove any obsolete legacy quizzes that are not in SEED_QUIZZES
+  const validIds = SEED_QUIZZES.map((q) => q.id);
+  const placeholders = validIds.map((_, i) => `$${i + 1}`).join(',');
+  await query(`DELETE FROM quizzes WHERE id NOT IN (${placeholders})`, validIds);
 
   console.log(`[DB] Seeded ${SEED_QUIZZES.length} quizzes successfully.`);
 }
@@ -473,13 +463,13 @@ async function getQuestionsByQuizId(quizId, includeAnswers = false) {
 }
 
 /**
- * Record a quiz attempt in the database
+ * Record a quiz attempt in the database with status ('completed' or 'incomplete')
  */
-async function recordQuizAttempt({ userId, quizId, score, totalQuestions, percentage, answers }) {
+async function recordQuizAttempt({ userId, quizId, score, totalQuestions, percentage, answers, status = 'completed' }) {
   const res = await query(
-    `INSERT INTO quiz_attempts (user_id, quiz_id, score, total_questions, percentage, answers)
-     VALUES ($1, $2, $3, $4, $5, $6)
-     RETURNING id, user_id, quiz_id, score, total_questions, percentage, completed_at`,
+    `INSERT INTO quiz_attempts (user_id, quiz_id, score, total_questions, percentage, answers, status)
+     VALUES ($1, $2, $3, $4, $5, $6, $7)
+     RETURNING id, user_id, quiz_id, score, total_questions, percentage, status, completed_at`,
     [
       userId || null,
       quizId,
@@ -487,25 +477,62 @@ async function recordQuizAttempt({ userId, quizId, score, totalQuestions, percen
       totalQuestions,
       percentage,
       typeof answers === 'string' ? answers : JSON.stringify(answers),
+      status,
     ]
   );
   return res.rows[0];
 }
 
 /**
- * Get past attempts for a given user
+ * Get past attempts for a given user.
+ * By default, only returns completed attempts so unfinished/incomplete attempts
+ * are prevented from counting as completed attempts.
  */
-async function getQuizAttemptsByUserId(userId) {
-  const res = await query(
-    `SELECT qa.id, qa.quiz_id, q.title as quiz_title, qa.score, qa.total_questions,
-            qa.percentage, qa.completed_at
-     FROM quiz_attempts qa
-     JOIN quizzes q ON qa.quiz_id = q.id
-     WHERE qa.user_id = $1
-     ORDER BY qa.completed_at DESC`,
-    [userId]
-  );
+async function getQuizAttemptsByUserId(userId, onlyCompleted = true) {
+  const sql = onlyCompleted
+    ? `SELECT qa.id, qa.quiz_id, q.title as quiz_title, q.category, q.difficulty,
+              qa.score, qa.total_questions, qa.percentage, qa.status, qa.completed_at
+       FROM quiz_attempts qa
+       JOIN quizzes q ON qa.quiz_id = q.id
+       WHERE qa.user_id = $1 AND qa.status = 'completed'
+       ORDER BY qa.completed_at DESC, qa.id DESC`
+    : `SELECT qa.id, qa.quiz_id, q.title as quiz_title, q.category, q.difficulty,
+              qa.score, qa.total_questions, qa.percentage, qa.status, qa.completed_at
+       FROM quiz_attempts qa
+       JOIN quizzes q ON qa.quiz_id = q.id
+       WHERE qa.user_id = $1
+       ORDER BY qa.completed_at DESC, qa.id DESC`;
+
+  const res = await query(sql, [userId]);
   return res.rows;
+}
+
+/**
+ * Compute aggregate performance statistics for a player based strictly on completed attempts
+ */
+async function getUserQuizStats(userId) {
+  const attempts = await getQuizAttemptsByUserId(userId, true);
+  if (attempts.length === 0) {
+    return {
+      totalCompleted: 0,
+      averagePercentage: 0,
+      bestPercentage: 0,
+      quizzesMastered: 0,
+    };
+  }
+
+  const totalCompleted = attempts.length;
+  const sumPercentage = attempts.reduce((acc, a) => acc + a.percentage, 0);
+  const averagePercentage = Math.round(sumPercentage / totalCompleted);
+  const bestPercentage = Math.max(...attempts.map((a) => a.percentage));
+  const quizzesMastered = attempts.filter((a) => a.percentage >= 80).length;
+
+  return {
+    totalCompleted,
+    averagePercentage,
+    bestPercentage,
+    quizzesMastered,
+  };
 }
 
 /**
@@ -532,6 +559,7 @@ module.exports = {
   getQuestionsByQuizId,
   recordQuizAttempt,
   getQuizAttemptsByUserId,
+  getUserQuizStats,
   closeDb,
   isInMemoryDatabase: () => isInMemory,
   SEED_QUIZZES,

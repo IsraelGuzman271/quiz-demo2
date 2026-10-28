@@ -42,7 +42,7 @@ function createApp() {
   app.get('/api/health', (req, res) => {
     res.json({
       status: 'ok',
-      phase: 'Phase 2: Quiz engine',
+      phase: 'Phase 3: Attempts and user history',
       database: db.isInMemoryDatabase() ? 'PostgreSQL (in-memory pg-mem QA)' : 'PostgreSQL (external)',
       timestamp: new Date().toISOString(),
     });

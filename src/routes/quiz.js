@@ -22,7 +22,8 @@ router.get('/', async (req, res) => {
 
 /**
  * GET /api/quizzes/attempts/my
- * Returns quiz history for the authenticated user
+ * Returns personal quiz history and statistics for the authenticated user.
+ * Strictly scopes to req.session.userId and filters by completed status by default.
  */
 router.get('/attempts/my', async (req, res) => {
   if (!req.session || !req.session.userId) {
@@ -30,14 +31,63 @@ router.get('/attempts/my', async (req, res) => {
   }
 
   try {
-    const attempts = await db.getQuizAttemptsByUserId(req.session.userId);
+    const onlyCompleted = req.query.onlyCompleted === 'true';
+    const allAttempts = await db.getQuizAttemptsByUserId(req.session.userId, false);
+    const completedAttempts = allAttempts.filter((a) => a.status === 'completed');
+    const attempts = onlyCompleted ? completedAttempts : allAttempts;
+    const stats = await db.getUserQuizStats(req.session.userId);
+
     return res.json({
       status: 'success',
+      userId: req.session.userId,
+      username: req.session.username,
+      count: attempts.length,
+      stats,
       attempts,
+      completedAttempts,
     });
   } catch (err) {
     console.error('[QUIZ] Error fetching attempts:', err);
     return res.status(500).json({ error: 'Failed to retrieve quiz attempts.' });
+  }
+});
+
+/**
+ * POST /api/quizzes/:id/abandon
+ * Records an unfinished/abandoned attempt as status = 'incomplete'.
+ * Explicitly prevents unfinished attempts from counting as completed attempts.
+ */
+router.post('/:id/abandon', async (req, res) => {
+  try {
+    const quizId = req.params.id;
+    const quiz = await db.getQuizById(quizId);
+    if (!quiz) {
+      return res.status(404).json({ error: `Quiz "${quizId}" not found.` });
+    }
+
+    const userId = req.session && req.session.userId ? req.session.userId : null;
+    const questions = await db.getQuestionsByQuizId(quizId, false);
+    const { partialAnswers = {} } = req.body || {};
+
+    const attemptRecord = await db.recordQuizAttempt({
+      userId,
+      quizId,
+      score: 0,
+      totalQuestions: questions.length,
+      percentage: 0,
+      answers: partialAnswers,
+      status: 'incomplete',
+    });
+
+    return res.status(200).json({
+      status: 'success',
+      message: 'Unfinished attempt recorded as incomplete (does not count as completed).',
+      attemptId: attemptRecord.id,
+      attemptStatus: 'incomplete',
+    });
+  } catch (err) {
+    console.error('[QUIZ] Error recording abandoned attempt:', err);
+    return res.status(500).json({ error: 'Failed to record unfinished quiz attempt.' });
   }
 });
 
@@ -176,6 +226,13 @@ router.post('/:id/submit', async (req, res) => {
     const percentage = totalQuestions > 0 ? Math.round((score / totalQuestions) * 100) : 0;
     const passed = percentage >= 70;
 
+    // Distinguish completed vs incomplete attempts
+    const answeredCount = questionsWithAnswers.filter(
+      (q) => answerMap[q.id] !== undefined && answerMap[q.id] !== null && answerMap[q.id] !== ''
+    ).length;
+    const isCompleted = answeredCount === totalQuestions;
+    const attemptStatus = isCompleted ? 'completed' : 'incomplete';
+
     // Persist attempt in database
     const userId = req.session && req.session.userId ? req.session.userId : null;
     const attemptRecord = await db.recordQuizAttempt({
@@ -185,10 +242,13 @@ router.post('/:id/submit', async (req, res) => {
       totalQuestions,
       percentage,
       answers: answerMap,
+      status: attemptStatus,
     });
 
     return res.status(200).json({
       status: 'success',
+      attemptStatus: attemptStatus,
+      isCompleted,
       attemptId: attemptRecord.id,
       quizId: quiz.id,
       quizTitle: quiz.title,
