@@ -4,6 +4,7 @@ const path = require('path');
 const authRoutes = require('./routes/auth');
 const playerRoutes = require('./routes/player');
 const adminRoutes = require('./routes/admin');
+const quizRoutes = require('./routes/quiz');
 const db = require('./db');
 
 function createApp() {
@@ -35,12 +36,13 @@ function createApp() {
   app.use('/api/auth', authRoutes);
   app.use('/api/player', playerRoutes);
   app.use('/api/admin', adminRoutes);
+  app.use('/api/quizzes', quizRoutes);
 
   // Health and status endpoint
   app.get('/api/health', (req, res) => {
     res.json({
       status: 'ok',
-      phase: 'Phase 1: Foundation and authentication',
+      phase: 'Phase 2: Quiz engine',
       database: db.isInMemoryDatabase() ? 'PostgreSQL (in-memory pg-mem QA)' : 'PostgreSQL (external)',
       timestamp: new Date().toISOString(),
     });
