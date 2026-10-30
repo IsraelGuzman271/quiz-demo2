@@ -46,4 +46,23 @@ router.get('/history', requireAuth, async (req, res) => {
   }
 });
 
+/**
+ * GET /api/player/assignments
+ * Returns quizzes assigned to the current player.
+ */
+router.get('/assignments', requireAuth, async (req, res) => {
+  try {
+    const assignments = await db.getAssignmentsForUser(req.session.userId);
+    return res.json({
+      status: 'success',
+      userId: req.session.userId,
+      count: assignments.length,
+      assignments,
+    });
+  } catch (err) {
+    console.error('[PLAYER] Error fetching assignments:', err);
+    return res.status(500).json({ error: 'Failed to retrieve assignments.' });
+  }
+});
+
 module.exports = router;

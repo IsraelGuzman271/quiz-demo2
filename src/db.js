@@ -298,7 +298,22 @@ async function initDb() {
   `;
   await p.query(createAttemptsTableQuery);
 
-  console.log('[DB] PostgreSQL schema initialized (users, quizzes, questions, quiz_attempts).');
+  // Phase 4: Quiz Assignments table (admin assigning quizzes to players)
+  const createAssignmentsTableQuery = `
+    CREATE TABLE IF NOT EXISTS quiz_assignments (
+      id SERIAL PRIMARY KEY,
+      quiz_id VARCHAR(50) REFERENCES quizzes(id) ON DELETE CASCADE,
+      user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+      assigned_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+      note TEXT,
+      due_date TIMESTAMP WITH TIME ZONE,
+      completed BOOLEAN NOT NULL DEFAULT FALSE,
+      created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    );
+  `;
+  await p.query(createAssignmentsTableQuery);
+
+  console.log('[DB] PostgreSQL schema initialized (users, quizzes, questions, quiz_attempts, quiz_assignments).');
 
   // Seed default quizzes and questions if empty
   await seedQuizzesIfEmpty();
@@ -536,6 +551,221 @@ async function getUserQuizStats(userId) {
 }
 
 /**
+ * Overall Leaderboard: Ranked by total completed quiz attempts
+ * Incomplete attempts are strictly excluded.
+ * Ties broken by highest average percentage and earliest completion.
+ */
+async function getOverallLeaderboard() {
+  const sql = `
+    SELECT u.id as user_id, u.username,
+           COUNT(qa.id) as total_completed,
+           AVG(qa.percentage) as avg_percentage,
+           MAX(qa.percentage) as best_percentage,
+           MAX(qa.completed_at) as last_completed
+    FROM users u
+    JOIN quiz_attempts qa ON u.id = qa.user_id
+    WHERE qa.status = 'completed'
+    GROUP BY u.id, u.username
+    ORDER BY COUNT(qa.id) DESC, AVG(qa.percentage) DESC, MAX(qa.completed_at) ASC
+  `;
+  const res = await query(sql);
+  return res.rows.map((row, idx) => ({
+    rank: idx + 1,
+    userId: row.user_id,
+    username: row.username,
+    totalCompleted: parseInt(row.total_completed, 10) || 0,
+    avgPercentage: Math.round(parseFloat(row.avg_percentage) || 0),
+    bestPercentage: parseInt(row.best_percentage, 10) || 0,
+    lastCompleted: row.last_completed,
+  }));
+}
+
+/**
+ * Per-Quiz Leaderboard: Ranked by highest score on the specified quiz
+ * Shows total completed attempts on that quiz.
+ * Incomplete attempts are strictly excluded.
+ */
+async function getQuizLeaderboard(quizId) {
+  const sql = `
+    SELECT u.id as user_id, u.username,
+           MAX(qa.score) as highest_score,
+           MAX(qa.total_questions) as total_questions,
+           MAX(qa.percentage) as highest_percentage,
+           COUNT(qa.id) as completed_attempts_count,
+           MIN(qa.completed_at) as achieved_at
+    FROM users u
+    JOIN quiz_attempts qa ON u.id = qa.user_id
+    WHERE qa.quiz_id = $1 AND qa.status = 'completed'
+    GROUP BY u.id, u.username
+    ORDER BY MAX(qa.score) DESC, MAX(qa.percentage) DESC, COUNT(qa.id) DESC, MIN(qa.completed_at) ASC
+  `;
+  const res = await query(sql, [quizId]);
+  return res.rows.map((row, idx) => ({
+    rank: idx + 1,
+    userId: row.user_id,
+    username: row.username,
+    highestScore: parseInt(row.highest_score, 10) || 0,
+    totalQuestions: parseInt(row.total_questions, 10) || 0,
+    highestPercentage: parseInt(row.highest_percentage, 10) || 0,
+    completedAttemptsCount: parseInt(row.completed_attempts_count, 10) || 0,
+    achievedAt: row.achieved_at,
+  }));
+}
+
+/**
+ * Get detailed attempt record by ID (for historical review)
+ */
+async function getAttemptById(attemptId) {
+  const res = await query(
+    `SELECT qa.id, qa.user_id, qa.quiz_id, q.title as quiz_title, q.category, q.difficulty,
+            qa.score, qa.total_questions, qa.percentage, qa.answers, qa.status, qa.completed_at
+     FROM quiz_attempts qa
+     JOIN quizzes q ON qa.quiz_id = q.id
+     WHERE qa.id = $1`,
+    [attemptId]
+  );
+  if (!res.rows[0]) return null;
+  const row = res.rows[0];
+  let parsedAnswers = {};
+  try {
+    parsedAnswers = typeof row.answers === 'string' ? JSON.parse(row.answers) : row.answers;
+  } catch (e) {
+    parsedAnswers = {};
+  }
+  return {
+    ...row,
+    answers: parsedAnswers,
+  };
+}
+
+/**
+ * Question CRUD (Admin operations)
+ */
+async function getQuestionById(id) {
+  const res = await query('SELECT * FROM questions WHERE id = $1', [id]);
+  if (!res.rows[0]) return null;
+  const row = res.rows[0];
+  return {
+    id: row.id,
+    quizId: row.quiz_id,
+    question: row.question,
+    options: typeof row.options === 'string' ? JSON.parse(row.options) : row.options,
+    correctIndex: row.correct_index,
+    explanation: row.explanation,
+    orderNum: row.order_num,
+  };
+}
+
+async function createQuestion({ id, quizId, question, options, correctIndex, explanation, orderNum = 0 }) {
+  if (!Array.isArray(options) || options.length !== 4) {
+    throw new Error('Questions must have exactly 4 options');
+  }
+  const qId = id || `q_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+  const res = await query(
+    `INSERT INTO questions (id, quiz_id, question, options, correct_index, explanation, order_num)
+     VALUES ($1, $2, $3, $4, $5, $6, $7)
+     RETURNING id, quiz_id, question, options, correct_index, explanation, order_num`,
+    [qId, quizId, question.trim(), JSON.stringify(options), correctIndex, explanation.trim(), orderNum]
+  );
+  const row = res.rows[0];
+  return {
+    id: row.id,
+    quizId: row.quiz_id,
+    question: row.question,
+    options: JSON.parse(row.options),
+    correctIndex: row.correct_index,
+    explanation: row.explanation,
+    orderNum: row.order_num,
+  };
+}
+
+async function updateQuestion(id, { question, options, correctIndex, explanation }) {
+  if (options && (!Array.isArray(options) || options.length !== 4)) {
+    throw new Error('Questions must have exactly 4 options');
+  }
+  const res = await query(
+    `UPDATE questions
+     SET question = $1, options = $2, correct_index = $3, explanation = $4
+     WHERE id = $5
+     RETURNING id, quiz_id, question, options, correct_index, explanation, order_num`,
+    [question.trim(), JSON.stringify(options), correctIndex, explanation.trim(), id]
+  );
+  if (!res.rows[0]) return null;
+  const row = res.rows[0];
+  return {
+    id: row.id,
+    quizId: row.quiz_id,
+    question: row.question,
+    options: JSON.parse(row.options),
+    correctIndex: row.correct_index,
+    explanation: row.explanation,
+    orderNum: row.order_num,
+  };
+}
+
+async function deleteQuestion(id) {
+  const res = await query('DELETE FROM questions WHERE id = $1 RETURNING id', [id]);
+  return res.rows.length > 0;
+}
+
+/**
+ * Quiz Assignment Management
+ */
+async function createAssignment({ quizId, userId, assignedBy, note = '', dueDate = null }) {
+  const res = await query(
+    `INSERT INTO quiz_assignments (quiz_id, user_id, assigned_by, note, due_date)
+     VALUES ($1, $2, $3, $4, $5)
+     RETURNING id, quiz_id, user_id, assigned_by, note, due_date, completed, created_at`,
+    [quizId, userId, assignedBy || null, note, dueDate]
+  );
+  return res.rows[0];
+}
+
+async function getAssignmentsForUser(userId) {
+  const res = await query(
+    `SELECT qa.id, qa.quiz_id, q.title as quiz_title, q.category, q.difficulty,
+            qa.note, qa.due_date, qa.completed, qa.created_at,
+            u.username as assigned_by_username
+     FROM quiz_assignments qa
+     JOIN quizzes q ON qa.quiz_id = q.id
+     LEFT JOIN users u ON qa.assigned_by = u.id
+     WHERE qa.user_id = $1
+     ORDER BY qa.created_at DESC`,
+    [userId]
+  );
+  return res.rows;
+}
+
+async function getAllAssignments() {
+  const res = await query(
+    `SELECT qa.id, qa.quiz_id, q.title as quiz_title, qa.user_id,
+            target_u.username as player_username,
+            admin_u.username as assigned_by_username,
+            qa.note, qa.due_date, qa.completed, qa.created_at
+     FROM quiz_assignments qa
+     JOIN quizzes q ON qa.quiz_id = q.id
+     JOIN users target_u ON qa.user_id = target_u.id
+     LEFT JOIN users admin_u ON qa.assigned_by = admin_u.id
+     ORDER BY qa.created_at DESC`
+  );
+  return res.rows;
+}
+
+async function deleteAssignment(id) {
+  const res = await query('DELETE FROM quiz_assignments WHERE id = $1 RETURNING id', [id]);
+  return res.rows.length > 0;
+}
+
+async function markAssignmentCompleted(quizId, userId) {
+  await query(
+    `UPDATE quiz_assignments
+     SET completed = TRUE
+     WHERE quiz_id = $1 AND user_id = $2`,
+    [quizId, userId]
+  );
+}
+
+/**
  * Close database pool
  */
 async function closeDb() {
@@ -560,6 +790,18 @@ module.exports = {
   recordQuizAttempt,
   getQuizAttemptsByUserId,
   getUserQuizStats,
+  getOverallLeaderboard,
+  getQuizLeaderboard,
+  getAttemptById,
+  getQuestionById,
+  createQuestion,
+  updateQuestion,
+  deleteQuestion,
+  createAssignment,
+  getAssignmentsForUser,
+  getAllAssignments,
+  deleteAssignment,
+  markAssignmentCompleted,
   closeDb,
   isInMemoryDatabase: () => isInMemory,
   SEED_QUIZZES,

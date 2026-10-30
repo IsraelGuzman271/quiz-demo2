@@ -21,15 +21,17 @@
         </div>
         <div class="brand-text">
           <h1>Quiz Demo</h1>
-          <span class="qa-badge">Branch: phase-3-attempts-history</span>
+          <span class="qa-badge">Branch: phase-4-leaderboards-admin</span>
         </div>
       </div>
 
       <!-- Navigation Tabs -->
       <nav class="nav-tabs">
         <button id="tabQuizzesBtn" class="nav-tab active">Quizzes</button>
+        <button id="tabLeaderboardsBtn" class="nav-tab">Leaderboards</button>
         <button id="tabHistoryBtn" class="nav-tab">My History</button>
-        <button id="tabAuthRolesBtn" class="nav-tab">Auth &amp; Roles</button>
+        <button id="tabAdminBtn" class="nav-tab hidden">Admin Panel</button>
+        <button id="tabAuthRolesBtn" class="nav-tab">Auth &amp; Account</button>
       </nav>
 
       <div class="header-right">
@@ -60,6 +62,17 @@
         <div class="section-hero">
           <h2>Select a Quiz Challenge</h2>
           <p>Choose from Soccer, Geography Capitals, American Football, or English Vocabulary. Exactly four choices per question.</p>
+        </div>
+
+        <!-- Assigned Quizzes (Shown for logged in players when they have assignments) -->
+        <div id="playerAssignedQuizzesContainer" class="assigned-quizzes-card hidden">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <h4>📋 Quizzes Assigned to You by Admin</h4>
+            <span class="badge badge-player" id="assignedQuizzesCountBadge">0 Assigned</span>
+          </div>
+          <div id="playerAssignedList" class="assigned-list">
+            <!-- Rendered dynamically -->
+          </div>
         </div>
 
         <div id="quizListGrid" class="quiz-cards-grid">
@@ -152,9 +165,68 @@
 
     </section>
 
+    <!-- =================================================== -->
+    <!-- SECTION 2: LEADERBOARDS (Phase 4 Focus)             -->
+    <!-- =================================================== -->
+    <section id="leaderboardSection" class="leaderboards-section hidden">
+      <div class="section-hero">
+        <h2>Global &amp; Quiz Leaderboards</h2>
+        <p>Rankings calculated live according to Spec Doc rules. Incomplete attempts are strictly excluded.</p>
+      </div>
+
+      <!-- Controls: Overall vs Per-Quiz Toggle -->
+      <div class="leaderboard-toggle-bar">
+        <div class="subtab-group">
+          <button id="lbTypeOverallBtn" class="subtab-btn active">Overall (Total Completed)</button>
+          <button id="lbTypeQuizBtn" class="subtab-btn">Per-Quiz (Highest Score)</button>
+        </div>
+
+        <div id="perQuizSelectorWrap" class="hidden" style="display: flex; align-items: center; gap: 0.5rem;">
+          <label for="lbQuizSelect" style="font-size: 0.85rem; color: var(--text-muted);">Select Quiz:</label>
+          <select id="lbQuizSelect" class="form-select" style="padding: 0.35rem 0.75rem; font-size: 0.85rem;">
+            <!-- Populated dynamically -->
+          </select>
+        </div>
+
+        <button id="refreshLeaderboardBtn" class="btn-sm btn-ghost">Refresh Rankings</button>
+      </div>
+
+      <!-- Rankings Table Card -->
+      <div class="content-card">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.5rem;">
+          <div>
+            <h3 id="leaderboardTitle">Overall Quiz Masters</h3>
+            <p id="leaderboardSubtitle" style="font-size: 0.82rem; color: var(--text-muted);">
+              Ranked by total completed quizzes. Ties broken by highest average accuracy, then earliest completion.
+            </p>
+          </div>
+          <span class="badge badge-player" id="lbParticipantCount">0 Competitors</span>
+        </div>
+
+        <div class="table-container">
+          <table class="data-table">
+            <thead id="leaderboardThead">
+              <tr>
+                <th style="width: 70px;">Rank</th>
+                <th>Player</th>
+                <th>Total Completed</th>
+                <th>Average Accuracy</th>
+                <th>Top Percentage</th>
+                <th>Last Active</th>
+              </tr>
+            </thead>
+            <tbody id="leaderboardTbody">
+              <tr>
+                <td colspan="6" class="table-loading">Loading live leaderboard from database...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
 
     <!-- =================================================== -->
-    <!-- SECTION 2: MY HISTORY (Phase 3 Focus)               -->
+    <!-- SECTION 3: MY HISTORY (Phase 3 Focus)               -->
     <!-- =================================================== -->
     <section id="historySection" class="history-section hidden">
       <div class="section-hero">
@@ -241,9 +313,254 @@
       </div>
     </section>
 
+    <!-- =================================================== -->
+    <!-- SECTION 4: ADMIN TOOLS (Phase 4 Focus)              -->
+    <!-- =================================================== -->
+    <section id="adminSection" class="admin-section hidden">
+      <div class="section-hero">
+        <h2>Admin Management Suite</h2>
+        <p>Manage quiz questions, assign quizzes to students, and bulk-import questions via CSV with validation.</p>
+      </div>
+
+      <!-- Admin Subnavigation -->
+      <div class="leaderboard-toggle-bar">
+        <div class="subtab-group">
+          <button id="adminSubtabQuestionsBtn" class="subtab-btn active">Question Editor</button>
+          <button id="adminSubtabAssignmentsBtn" class="subtab-btn">Quiz Assignments</button>
+          <button id="adminSubtabCsvBtn" class="subtab-btn">CSV Import &amp; Validation</button>
+        </div>
+      </div>
+
+      <!-- Tab 1: Question Editor -->
+      <div id="adminQuestionsPanel" class="content-card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.5rem;">
+          <div>
+            <h3>Question Editor</h3>
+            <p style="font-size: 0.85rem; color: var(--text-muted);">Questions must have exactly four answer choices and one correct choice.</p>
+          </div>
+          <div style="display:flex; align-items:center; gap:0.5rem;">
+            <label for="adminQuizFilter" style="font-size:0.85rem; color:var(--text-muted);">Quiz:</label>
+            <select id="adminQuizFilter" class="form-select" style="padding:0.35rem 0.75rem; font-size:0.85rem;"></select>
+            <button id="openNewQuestionBtn" class="btn btn-sm btn-primary">+ Add Question</button>
+          </div>
+        </div>
+
+        <!-- Add / Edit Question Form Container (Collapsible) -->
+        <div id="adminQuestionFormWrap" class="content-card hidden" style="background: rgba(15, 23, 42, 0.6); margin-bottom: 1.5rem; border: 1px solid var(--accent-primary);">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+            <h4 id="questionFormTitle">Add New Question</h4>
+            <button id="cancelQuestionFormBtn" class="btn-sm btn-ghost">Cancel</button>
+          </div>
+
+          <form id="adminQuestionForm" class="auth-form" autocomplete="off">
+            <input type="hidden" id="adminEditQuestionId">
+            <div class="form-group">
+              <label for="adminQuestionTargetQuiz">Target Quiz</label>
+              <select id="adminQuestionTargetQuiz" class="form-select" required></select>
+            </div>
+            <div class="form-group">
+              <label for="adminQuestionText">Question Prompt</label>
+              <input type="text" id="adminQuestionText" required placeholder="e.g. Which team won the 2022 FIFA World Cup?">
+            </div>
+
+            <!-- Exactly Four Answer Options -->
+            <div style="margin: 1rem 0;">
+              <label style="font-weight: 600; font-size: 0.85rem; margin-bottom: 0.5rem; display: block;">
+                Answer Choices (Exactly 4 Required) — Select the Correct Answer:
+              </label>
+              <div style="display: flex; flex-direction: column; gap: 0.65rem;">
+                <div style="display: flex; align-items: center; gap: 0.75rem;">
+                  <input type="radio" name="adminCorrectRadio" value="0" id="correctRadio0" required checked>
+                  <label for="correctRadio0" style="width: 25px; font-weight:700;">A:</label>
+                  <input type="text" id="adminOpt0" required placeholder="Choice A text" style="flex:1; padding:0.4rem 0.6rem; background:var(--bg-input); border:1px solid var(--border-color); border-radius:var(--radius); color:var(--text-main);">
+                </div>
+                <div style="display: flex; align-items: center; gap: 0.75rem;">
+                  <input type="radio" name="adminCorrectRadio" value="1" id="correctRadio1" required>
+                  <label for="correctRadio1" style="width: 25px; font-weight:700;">B:</label>
+                  <input type="text" id="adminOpt1" required placeholder="Choice B text" style="flex:1; padding:0.4rem 0.6rem; background:var(--bg-input); border:1px solid var(--border-color); border-radius:var(--radius); color:var(--text-main);">
+                </div>
+                <div style="display: flex; align-items: center; gap: 0.75rem;">
+                  <input type="radio" name="adminCorrectRadio" value="2" id="correctRadio2" required>
+                  <label for="correctRadio2" style="width: 25px; font-weight:700;">C:</label>
+                  <input type="text" id="adminOpt2" required placeholder="Choice C text" style="flex:1; padding:0.4rem 0.6rem; background:var(--bg-input); border:1px solid var(--border-color); border-radius:var(--radius); color:var(--text-main);">
+                </div>
+                <div style="display: flex; align-items: center; gap: 0.75rem;">
+                  <input type="radio" name="adminCorrectRadio" value="3" id="correctRadio3" required>
+                  <label for="correctRadio3" style="width: 25px; font-weight:700;">D:</label>
+                  <input type="text" id="adminOpt3" required placeholder="Choice D text" style="flex:1; padding:0.4rem 0.6rem; background:var(--bg-input); border:1px solid var(--border-color); border-radius:var(--radius); color:var(--text-main);">
+                </div>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="adminQuestionExplanation">Educational Explanation</label>
+              <textarea id="adminQuestionExplanation" rows="2" placeholder="Explain why this is the correct answer..." style="width: 100%; background: var(--bg-input); border: 1px solid var(--border-color); border-radius: var(--radius); color: var(--text-main); padding: 0.5rem; font-family: inherit; font-size: 0.85rem;"></textarea>
+            </div>
+
+            <div style="display: flex; gap: 0.75rem; justify-content: flex-end; margin-top: 1rem;">
+              <button type="button" class="btn btn-outline" id="cancelQuestionSaveBtn">Cancel</button>
+              <button type="submit" class="btn btn-primary" id="saveQuestionBtn">Save Question</button>
+            </div>
+          </form>
+        </div>
+
+        <!-- Questions List Table -->
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th style="width: 50px;">#</th>
+                <th>Question</th>
+                <th>Options (Correct Marked)</th>
+                <th>Explanation</th>
+                <th style="width: 120px;">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="adminQuestionsTableBody">
+              <tr><td colspan="5" class="table-loading">Loading questions...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Tab 2: Quiz Assignments -->
+      <div id="adminAssignmentsPanel" class="content-card hidden">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.5rem;">
+          <div>
+            <h3>Quiz Assignments</h3>
+            <p style="font-size: 0.85rem; color: var(--text-muted);">Assign quizzes to registered players and track completion.</p>
+          </div>
+          <button id="toggleNewAssignmentBtn" class="btn btn-sm btn-primary">+ New Assignment</button>
+        </div>
+
+        <!-- New Assignment Form (Collapsible) -->
+        <div id="newAssignmentFormWrap" class="content-card hidden" style="background: rgba(15, 23, 42, 0.6); margin-bottom: 1.5rem; border: 1px solid var(--accent-secondary);">
+          <h4 style="margin-bottom: 1rem;">Create Quiz Assignment</h4>
+          <form id="createAssignmentForm" class="auth-form" autocomplete="off">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+              <div class="form-group">
+                <label for="assignTargetUser">Assign to Player</label>
+                <select id="assignTargetUser" class="form-select" required></select>
+              </div>
+              <div class="form-group">
+                <label for="assignTargetQuiz">Quiz</label>
+                <select id="assignTargetQuiz" class="form-select" required></select>
+              </div>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+              <div class="form-group">
+                <label for="assignDueDate">Due Date (Optional)</label>
+                <input type="date" id="assignDueDate" style="padding: 0.4rem; background: var(--bg-input); border: 1px solid var(--border-color); border-radius: var(--radius); color: var(--text-main);">
+              </div>
+              <div class="form-group">
+                <label for="assignNote">Instructions / Note</label>
+                <input type="text" id="assignNote" placeholder="e.g. Complete before end of week">
+              </div>
+            </div>
+            <div style="display: flex; gap: 0.75rem; justify-content: flex-end; margin-top: 1rem;">
+              <button type="button" class="btn btn-outline" id="cancelAssignBtn">Cancel</button>
+              <button type="submit" class="btn btn-secondary">Assign Quiz</button>
+            </div>
+          </form>
+        </div>
+
+        <!-- Assignments Table -->
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Player</th>
+                <th>Quiz</th>
+                <th>Assigned By</th>
+                <th>Due Date</th>
+                <th>Status</th>
+                <th>Note</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="adminAssignmentsTableBody">
+              <tr><td colspan="8" class="table-loading">Loading assignments...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Tab 3: CSV Import & Validation -->
+      <div id="adminCsvPanel" class="content-card hidden">
+        <div style="margin-bottom: 1.25rem;">
+          <h3>CSV Question Upload, Validation &amp; Import</h3>
+          <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.25rem;">
+            Bulk upload questions with complete syntax, schema, and option validation. Questions require exactly 4 choices.
+          </p>
+        </div>
+
+        <div class="csv-report-box" style="margin-bottom: 1.25rem;">
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem;">
+            <strong>Expected CSV Column Format:</strong>
+            <button id="loadSampleCsvBtn" class="btn-sm btn-ghost">Load Sample CSV Template</button>
+          </div>
+          <code style="display:block; margin-top:0.5rem; font-size:0.78rem; color:#93c5fd; word-break:break-all;">
+            quiz_id,question,option_a,option_b,option_c,option_d,correct_choice,explanation
+          </code>
+          <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.4rem;">
+            <code>correct_choice</code> can be specified as 0..3 or A..D.
+          </p>
+        </div>
+
+        <div class="form-group">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 0.4rem;">
+            <label for="csvTextInput">Paste CSV Data or Choose File:</label>
+            <input type="file" id="csvFileInput" accept=".csv" style="font-size: 0.8rem; color: var(--text-muted);">
+          </div>
+          <textarea id="csvTextInput" class="csv-textarea" placeholder="Paste your CSV content here..."></textarea>
+        </div>
+
+        <div style="display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap; margin-top: 1rem;">
+          <button id="previewCsvBtn" class="btn btn-primary">Preview &amp; Validate CSV</button>
+          <button id="importCsvBtn" class="btn btn-secondary hidden">Import Valid Questions &rarr;</button>
+          <button id="clearCsvBtn" class="btn-sm btn-ghost">Clear</button>
+        </div>
+
+        <!-- CSV Diagnostic Validation Report -->
+        <div id="csvValidationReportWrap" class="hidden" style="margin-top: 1.5rem;">
+          <div class="csv-report-box">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem;">
+              <h4 id="csvReportSummary">Validation Diagnostics</h4>
+              <div id="csvReportBadges" style="display:flex; gap:0.5rem;"></div>
+            </div>
+
+            <!-- Error List (if invalid rows exist) -->
+            <div id="csvErrorListContainer" class="hidden" style="margin-top: 1rem;">
+              <strong style="color: var(--accent-danger); font-size: 0.85rem;">Validation Errors Found:</strong>
+              <div id="csvErrorList" class="csv-error-list"></div>
+            </div>
+
+            <!-- Valid Preview Table -->
+            <div id="csvValidPreviewContainer" class="hidden" style="margin-top: 1.25rem;">
+              <strong style="color: var(--accent-secondary); font-size: 0.85rem;">Ready to Import:</strong>
+              <div class="table-container" style="max-height: 250px; overflow-y: auto;">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>Line</th>
+                      <th>Quiz ID</th>
+                      <th>Question</th>
+                      <th>Options</th>
+                      <th>Correct</th>
+                    </tr>
+                  </thead>
+                  <tbody id="csvPreviewTableBody"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
 
     <!-- =================================================== -->
-    <!-- SECTION 3: AUTH & ROLES (Preserved from Phase 1)     -->
+    <!-- SECTION 5: AUTH & ROLES (Preserved from Phase 1)     -->
     <!-- =================================================== -->
     <section id="authRolesSection" class="auth-roles-section hidden">
 
@@ -411,53 +728,53 @@
       </div>
     </section>
 
-    <!-- Phase 3 Verification Checklist -->
+    <!-- Phase 4 Verification Checklist -->
     <section class="checklist-section">
       <div class="checklist-header">
-        <h3>Phase 3 Completion Gate Checklist</h3>
-        <p>Built according to strict non-negotiable rules on branch <code>phase-3-attempts-history</code>.</p>
+        <h3>Phase 4 Completion Gate Checklist</h3>
+        <p>Built according to strict non-negotiable rules on branch <code>phase-4-leaderboards-admin</code>.</p>
       </div>
       <div class="checklist-grid">
         <div class="check-item checked">
           <div class="check-icon">✓</div>
           <div>
-            <strong>Persistent Completed Attempts</strong>
-            <p>Saved with user, quiz, result, and timestamp; persists across logout and login</p>
+            <strong>Overall Leaderboard &amp; Rules</strong>
+            <p>Ranked by total completed attempts; tie-breaks with average accuracy and earliest date; incomplete attempts excluded</p>
           </div>
         </div>
         <div class="check-item checked">
           <div class="check-icon">✓</div>
           <div>
-            <strong>Personal History Isolation</strong>
-            <p>History strictly contains the authenticated player's attempts, never another user's</p>
+            <strong>Per-Quiz Rankings</strong>
+            <p>Ranked by highest score on specific quiz with completed attempt counts and accuracy</p>
           </div>
         </div>
         <div class="check-item checked">
           <div class="check-icon">✓</div>
           <div>
-            <strong>Retry Record Generation</strong>
-            <p>Retrying a quiz produces a distinct new attempt record with independent score</p>
+            <strong>Admin Question Editor</strong>
+            <p>Full CRUD for questions and choices with strict 4-option validation</p>
           </div>
         </div>
         <div class="check-item checked">
           <div class="check-icon">✓</div>
           <div>
-            <strong>Incomplete Attempt Isolation</strong>
-            <p>Unfinished and incomplete submissions do not count as completed attempts</p>
+            <strong>Quiz Assignment Management</strong>
+            <p>Admins assign quizzes with notes/due dates; players view and auto-complete</p>
           </div>
         </div>
         <div class="check-item checked">
           <div class="check-icon">✓</div>
           <div>
-            <strong>Verified Quiz Scoring</strong>
-            <p>Soccer, Hispanic Capitals, Football, and Vocab scoring remains 100% accurate</p>
+            <strong>CSV Upload, Validation &amp; Preview</strong>
+            <p>Line-by-line syntax diagnostics, error reporting, and safe bulk import</p>
           </div>
         </div>
         <div class="check-item checked">
           <div class="check-icon">✓</div>
           <div>
-            <strong>Phase 1 &amp; Phase 2 Preservation</strong>
-            <p>Authentication, role-based protection, and 4-choice questions fully intact</p>
+            <strong>Attempt Review &amp; Auto-Advance</strong>
+            <p>Detailed quiz review from history and smooth auto-advance upon answering</p>
           </div>
         </div>
       </div>
@@ -465,8 +782,36 @@
 
   </main>
 
+  <!-- Modal: Attempt Historical Review -->
+  <div id="attemptReviewModal" class="modal-overlay hidden">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <div>
+          <h3 id="modalQuizTitle">Attempt Review</h3>
+          <span id="modalAttemptMeta" style="font-size:0.8rem; color:var(--text-muted);">Attempt #0</span>
+        </div>
+        <button id="closeAttemptModalBtn" class="modal-close-btn">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(15,23,42,0.6); padding:1rem; border-radius:var(--radius); border:1px solid var(--border-color);">
+          <div>
+            <div style="font-size: 1.5rem; font-weight:800; color:#60a5fa;" id="modalScoreDisplay">0 / 0 (0%)</div>
+            <div id="modalDateDisplay" style="font-size:0.8rem; color:var(--text-muted);">Completed At: --</div>
+          </div>
+          <span id="modalStatusBadge" class="badge badge-player">COMPLETED</span>
+        </div>
+        <div id="modalQuestionsBreakdown" class="results-questions-list">
+          <!-- Rendered dynamically -->
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button id="modalDoneBtn" class="btn btn-primary">Close Review</button>
+      </div>
+    </div>
+  </div>
+
   <footer class="app-footer">
-    <p>Quiz Demo • Phase 3: Attempts and User History • Git Branch: <code>phase-3-attempts-history</code></p>
+    <p>Quiz Demo • Phase 4: Leaderboards and Admin Tools • Git Branch: <code>phase-4-leaderboards-admin</code></p>
   </footer>
 
   <script src="/app.js"></script>

@@ -102,15 +102,16 @@ router.post('/register', async (req, res) => {
  */
 router.post('/login', async (req, res) => {
   try {
-    const { identifier, password } = req.body;
+    const { identifier, username, email, password } = req.body || {};
+    const rawId = identifier || username || email;
 
-    if (!identifier || !password) {
+    if (!rawId || !password) {
       return res.status(400).json({
         error: 'Identifier (username or email) and password are required.',
       });
     }
 
-    const cleanIdentifier = identifier.trim();
+    const cleanIdentifier = String(rawId).trim();
 
     // Look up by username first, then by email
     let user = await db.getUserByUsername(cleanIdentifier);

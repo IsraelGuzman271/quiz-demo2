@@ -53,6 +53,72 @@ router.get('/attempts/my', async (req, res) => {
 });
 
 /**
+ * GET /api/quizzes/attempts/:id/review
+ * Retrieves complete historical question breakdown and answers for a specific attempt.
+ * Allows the student to review their past quiz results in detail.
+ */
+router.get('/attempts/:id/review', async (req, res) => {
+  if (!req.session || !req.session.userId) {
+    return res.status(401).json({ error: 'Authentication required to review quiz attempts.' });
+  }
+
+  try {
+    const attemptId = parseInt(req.params.id, 10);
+    const attempt = await db.getAttemptById(attemptId);
+    if (!attempt) {
+      return res.status(404).json({ error: 'Attempt record not found.' });
+    }
+
+    // Privacy guard: player can only view their own attempts (admin can view any)
+    if (req.session.userRole !== 'admin' && attempt.user_id !== req.session.userId) {
+      return res.status(403).json({ error: 'Access denied to this attempt record.' });
+    }
+
+    const questionsWithAnswers = await db.getQuestionsByQuizId(attempt.quiz_id, true);
+    const answerMap = attempt.answers || {};
+
+    const results = questionsWithAnswers.map((q) => {
+      const selected = answerMap[q.id];
+      const isAnswered = selected !== undefined && selected !== null && selected !== '';
+      const selectedIndex = isAnswered ? parseInt(selected, 10) : null;
+      const isValidChoice = Number.isInteger(selectedIndex) && selectedIndex >= 0 && selectedIndex <= 3;
+      const isCorrect = isValidChoice && selectedIndex === q.correctIndex;
+
+      return {
+        questionId: q.id,
+        question: q.question,
+        options: q.options,
+        selectedIndex: isValidChoice ? selectedIndex : null,
+        correctIndex: q.correctIndex,
+        isCorrect,
+        unanswered: !isAnswered,
+        explanation: q.explanation,
+      };
+    });
+
+    return res.json({
+      status: 'success',
+      attempt: {
+        id: attempt.id,
+        quizId: attempt.quiz_id,
+        quizTitle: attempt.quiz_title,
+        category: attempt.category,
+        difficulty: attempt.difficulty,
+        score: attempt.score,
+        totalQuestions: attempt.total_questions,
+        percentage: attempt.percentage,
+        status: attempt.status,
+        completedAt: attempt.completed_at,
+        results,
+      },
+    });
+  } catch (err) {
+    console.error('[QUIZ] Error reviewing attempt:', err);
+    return res.status(500).json({ error: 'Failed to retrieve attempt review.' });
+  }
+});
+
+/**
  * POST /api/quizzes/:id/abandon
  * Records an unfinished/abandoned attempt as status = 'incomplete'.
  * Explicitly prevents unfinished attempts from counting as completed attempts.
@@ -244,6 +310,12 @@ router.post('/:id/submit', async (req, res) => {
       answers: answerMap,
       status: attemptStatus,
     });
+
+    if (isCompleted && userId) {
+      await db.markAssignmentCompleted(quizId, userId).catch((err) => {
+        console.error('[QUIZ] Error marking assignment completed:', err);
+      });
+    }
 
     return res.status(200).json({
       status: 'success',

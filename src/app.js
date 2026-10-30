@@ -5,6 +5,7 @@ const authRoutes = require('./routes/auth');
 const playerRoutes = require('./routes/player');
 const adminRoutes = require('./routes/admin');
 const quizRoutes = require('./routes/quiz');
+const leaderboardRoutes = require('./routes/leaderboard');
 const db = require('./db');
 
 function createApp() {
@@ -37,12 +38,13 @@ function createApp() {
   app.use('/api/player', playerRoutes);
   app.use('/api/admin', adminRoutes);
   app.use('/api/quizzes', quizRoutes);
+  app.use('/api/leaderboard', leaderboardRoutes);
 
   // Health and status endpoint
   app.get('/api/health', (req, res) => {
     res.json({
       status: 'ok',
-      phase: 'Phase 3: Attempts and user history',
+      phase: 'Phase 4: Leaderboards and admin tools',
       database: db.isInMemoryDatabase() ? 'PostgreSQL (in-memory pg-mem QA)' : 'PostgreSQL (external)',
       timestamp: new Date().toISOString(),
     });
